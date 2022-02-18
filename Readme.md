@@ -1,5 +1,5 @@
 current result : 
-![](raw.githubusercontent.com/Braquemarok/tinyraytracer_Kohler_Martinetto/main/out.jpg)
+![](https://raw.githubusercontent.com/Braquemarok/tinyraytracer_Kohler_Martinetto/main/out.jpg)
 
 ## compilation
 ```sh
