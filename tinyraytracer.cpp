@@ -52,6 +52,17 @@ struct Sphere {
         if (t0 < 0) return false;
         return true;
     }
+
+    float get_opposed(const Vec3f &orig, const Vec3f &dir) const {
+      Vec3f L = center - orig;
+      float tca = L*dir;
+      float d2 = L*L - tca*tca;
+      float thc = sqrtf(radius*radius - d2);
+      float t0 = tca - thc;
+      float t1 = tca + thc;
+      if (t1 <= 0) t1 = t0;
+      return t1;
+    }
 };
 
 Vec3f reflect(const Vec3f &I, const Vec3f &N) {
@@ -66,15 +77,43 @@ Vec3f refract(const Vec3f &I, const Vec3f &N, const float eta_t, const float eta
     return k<0 ? Vec3f(1,0,0) : I*eta + N*(eta*cosi - sqrtf(k)); // k<0 = total reflection, no ray to refract. I refract it anyways, this has no physical meaning
 }
 
+std::vector<Sphere> sub;
+
 bool scene_intersect(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &spheres, Vec3f &hit, Vec3f &N, Material &material) {
     float spheres_dist = std::numeric_limits<float>::max();
     for (size_t i=0; i < spheres.size(); i++) {
         float dist_i;
+        float dist_i2;
         if (spheres[i].ray_intersect(orig, dir, dist_i) && dist_i < spheres_dist) {
-            spheres_dist = dist_i;
-            hit = orig + dir*dist_i;
-            N = (hit - spheres[i].center).normalize();
-            material = spheres[i].material;
+            for (size_t j=0; j < sub.size(); j++) {
+                float dist = pow(pow(spheres[i].center.x-sub[j].center.x, 2)+pow(spheres[i].center.y-sub[j].center.y, 2)+pow(spheres[i].center.z-sub[j].center.z, 2), 0.5);
+                if(dist<spheres[i].radius+sub[j].radius){
+                    if (sub[j].ray_intersect(orig, dir, dist_i2) && dist_i2 <= spheres_dist) {
+                        if(dist_i<dist_i2){
+                            spheres_dist = dist_i;
+                            hit = orig + dir*(dist_i);
+                            N = (hit - spheres[i].center).normalize();
+                            material = spheres[i].material;
+                        }
+                        else if(sub[j].get_opposed(orig, dir)<spheres[i].get_opposed(orig, dir)){
+                            spheres_dist = sub[j].get_opposed(orig, dir);
+                            hit = orig + dir*sub[j].get_opposed(orig, dir);
+                            N = (hit - sub[j].center).normalize();
+                            material = spheres[i].material;
+                        }
+                    }else{
+                        spheres_dist = (dist_i);
+                        hit = orig + dir*(dist_i);
+                        N = (hit - spheres[i].center).normalize();
+                        material = spheres[i].material;
+                    }
+                }else{
+                    spheres_dist = dist_i;
+                    hit = orig + dir*dist_i;
+                    N = (hit - spheres[i].center).normalize();
+                    material = spheres[i].material;
+                }
+            }
         }
     }
 
@@ -201,12 +240,16 @@ int main() {
     spheres.push_back(Sphere(Vec3f(-3,    0,   -16), 2,      ivory));
     spheres.push_back(Sphere(Vec3f(-1.0, -1.5, -12), 2,      glass));
     spheres.push_back(Sphere(Vec3f( 1.5, -0.5, -18), 3, red_rubber));
+    spheres.push_back(Sphere(Vec3f( -7, 5, -18), 5,         mirror));
     spheres.push_back(Sphere(Vec3f( 7,    5,   -18), 4,     mirror));
 
     std::vector<Light>  lights;
     lights.push_back(Light(Vec3f(-20, 20,  20), 1.5));
     lights.push_back(Light(Vec3f( 30, 50, -25), 1.8));
     lights.push_back(Light(Vec3f( 30, 20,  30), 1.7));
+
+    sub.push_back(Sphere(Vec3f(-3,    6,   -17), 2.5,      red_rubber));
+
     render(spheres, lights);
 
     return 0;
