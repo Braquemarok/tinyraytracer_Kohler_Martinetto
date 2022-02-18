@@ -8,6 +8,8 @@ Add environment maps:
 
 All the boring code (image/obj files serializer etc) is already there; to obtain the above image it suffices to add 10-20 lines of code.
 
+current result : 
+![](https://raw.githubusercontent.com/Braquemarok/tinyraytracer_Kohler_Martinetto/main/out.jpg?token=GHSAT0AAAAAABRJQPSMNHRGQFDGYYGL7KGGYQPX3CQ)
 
 ## compilation
 ```sh
